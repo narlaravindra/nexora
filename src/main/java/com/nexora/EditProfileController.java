@@ -1,14 +1,13 @@
 package com.nexora;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
 
 @Controller
@@ -17,7 +16,8 @@ public class EditProfileController {
     @Autowired
     JdbcTemplate db;
 
-    private static final String UPLOAD_DIR = "src/main/resources/static/uploads/";
+    @Autowired
+    Cloudinary cloudinary;
 
     @GetMapping("/edit-profile")
     public String editPage(Model model,
@@ -40,13 +40,13 @@ public class EditProfileController {
         String username = (String) session.getAttribute("username");
 
         if (photo != null && !photo.isEmpty()) {
-            String ext = photo.getOriginalFilename()
-                .substring(photo.getOriginalFilename().lastIndexOf("."));
-            String filename = username + "_" + System.currentTimeMillis() + ext;
-            Path path = Paths.get(UPLOAD_DIR + filename);
-            Files.write(path, photo.getBytes());
+            Map uploadResult = cloudinary.uploader().upload(
+                photo.getBytes(),
+                ObjectUtils.asMap("folder", "nexora/profiles")
+            );
+            String photoUrl = (String) uploadResult.get("secure_url");
             db.update("UPDATE users SET full_name = ?, bio = ?, photo = ? WHERE username = ?",
-                      full_name, bio, "/uploads/" + filename, username);
+                      full_name, bio, photoUrl, username);
         } else {
             db.update("UPDATE users SET full_name = ?, bio = ? WHERE username = ?",
                       full_name, bio, username);

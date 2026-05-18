@@ -1,14 +1,13 @@
 package com.nexora;
 
+import com.cloudinary.Cloudinary;
+import com.cloudinary.utils.ObjectUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -18,7 +17,8 @@ public class PostController {
     @Autowired
     JdbcTemplate db;
 
-    private static final String UPLOAD_DIR = "src/main/resources/static/uploads/";
+    @Autowired
+    Cloudinary cloudinary;
 
     @GetMapping("/feed")
     public String feed(Model model, jakarta.servlet.http.HttpSession session) {
@@ -53,16 +53,14 @@ public class PostController {
                              jakarta.servlet.http.HttpSession session) throws Exception {
         if (session.getAttribute("username") == null) return "redirect:/login";
         int userId = (int) session.getAttribute("user_id");
-        String username = (String) session.getAttribute("username");
 
         String imagePath = null;
         if (image != null && !image.isEmpty()) {
-            String ext = image.getOriginalFilename()
-                .substring(image.getOriginalFilename().lastIndexOf("."));
-            String filename = "post_" + username + "_" + System.currentTimeMillis() + ext;
-            Path path = Paths.get(UPLOAD_DIR + filename);
-            Files.write(path, image.getBytes());
-            imagePath = "/uploads/" + filename;
+            Map uploadResult = cloudinary.uploader().upload(
+                image.getBytes(),
+                ObjectUtils.asMap("folder", "nexora/posts")
+            );
+            imagePath = (String) uploadResult.get("secure_url");
         }
 
         db.update("INSERT INTO posts (user_id, content, image) VALUES (?, ?, ?)",
