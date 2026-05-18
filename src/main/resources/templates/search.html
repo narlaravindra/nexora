@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Nexora - Search</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef0f5; }
+        .navbar { background: linear-gradient(135deg, #6c63ff, #48c6ef); padding: 14px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .navbar h1 { color: white; font-size: 24px; letter-spacing: 1px; }
+        .navbar-right { display: flex; gap: 16px; }
+        .navbar a { color: white; text-decoration: none; font-size: 14px; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.5); }
+        .navbar a:hover { background: rgba(255,255,255,0.2); }
+        .container { max-width: 620px; margin: 32px auto; padding: 0 16px; }
+        .search-box { background: white; border-radius: 16px; padding: 24px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+        .search-form { display: flex; gap: 10px; }
+        .search-input { flex: 1; padding: 14px 18px; border: 1.5px solid #e0e0e0; border-radius: 30px; font-size: 15px; outline: none; }
+        .search-input:focus { border-color: #6c63ff; }
+        .search-btn { padding: 14px 24px; background: linear-gradient(135deg, #6c63ff, #48c6ef); color: white; border: none; border-radius: 30px; font-size: 15px; cursor: pointer; }
+        .user-card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); display: flex; align-items: center; justify-content: space-between; }
+        .user-left { display: flex; align-items: center; gap: 14px; }
+        .avatar { width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, #6c63ff, #48c6ef); color: white; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+        .user-name { font-weight: 600; color: #333; font-size: 15px; }
+        .user-stats { font-size: 13px; color: #aaa; margin-top: 2px; }
+        .btn-view { padding: 8px 20px; background: linear-gradient(135deg, #6c63ff, #48c6ef); color: white; border: none; border-radius: 20px; font-size: 13px; cursor: pointer; text-decoration: none; }
+        .no-results { text-align: center; color: #aaa; padding: 40px; font-size: 15px; }
+        .results-title { font-size: 14px; color: #888; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+<div class="navbar">
+    <h1>🌌 Nexora</h1>
+    <div class="navbar-right">
+        <a href="/feed">Feed</a>
+        <a href="/post">+ New Post</a>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+<div class="container">
+    <div class="search-box">
+        <form class="search-form" method="get" action="/search">
+            <input class="search-input" type="text" name="q"
+                   th:value="${query}"
+                   placeholder="Search users..." autofocus />
+            <button class="search-btn" type="submit">Search</button>
+        </form>
+    </div>
+
+    <div th:if="${users != null}">
+        <div class="results-title"
+             th:text="${users.size()} + ' result(s) for: ' + ${query}"></div>
+        <div th:if="${users.isEmpty()}" class="no-results">
+            No users found for "<span th:text="${query}"></span>"
+        </div>
+        <div th:each="user : ${users}" class="user-card">
+            <div class="user-left">
+                <div class="avatar" th:text="${user.username.substring(0,1).toUpperCase()}"></div>
+                <div>
+                    <div class="user-name" th:text="'@' + ${user.username}"></div>
+                    <div class="user-stats"
+                         th:text="${user.post_count} + ' posts · ' + ${user.followers} + ' followers'"></div>
+                </div>
+            </div>
+            <a class="btn-view" th:href="'/profile/' + ${user.username}">View</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

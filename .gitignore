@@ -1,0 +1,4 @@
+target/
+*.log
+*.jar
+src/main/resources/static/uploads/

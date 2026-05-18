@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Nexora - New Post</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef0f5; }
+        .navbar { background: linear-gradient(135deg, #6c63ff, #48c6ef); padding: 14px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .navbar h1 { color: white; font-size: 24px; letter-spacing: 1px; }
+        .navbar a { color: white; text-decoration: none; font-size: 14px; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.5); }
+        .navbar a:hover { background: rgba(255,255,255,0.2); }
+        .container { max-width: 620px; margin: 32px auto; padding: 0 16px; }
+        .card { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+        h2 { color: #6c63ff; margin-bottom: 20px; font-size: 20px; }
+        textarea { width: 100%; padding: 14px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 15px; height: 120px; box-sizing: border-box; resize: none; font-family: inherit; }
+        textarea:focus { outline: none; border-color: #6c63ff; }
+        .image-upload { margin-top: 16px; }
+        .image-label { display: inline-block; padding: 10px 20px; background: #eef0f5; border-radius: 20px; font-size: 14px; color: #6c63ff; cursor: pointer; }
+        .image-label:hover { background: #e0e2f0; }
+        input[type="file"] { display: none; }
+        .preview { margin-top: 12px; display: none; }
+        .preview img { width: 100%; border-radius: 12px; max-height: 300px; object-fit: cover; }
+        .btn-post { margin-top: 16px; padding: 14px 32px; background: linear-gradient(135deg, #6c63ff, #48c6ef); color: white; border: none; border-radius: 20px; font-size: 15px; cursor: pointer; width: 100%; }
+        .btn-post:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+<div class="navbar">
+    <h1>🌌 Nexora</h1>
+    <a href="/feed">← Back to Feed</a>
+</div>
+<div class="container">
+    <div class="card">
+        <h2>Create a Post</h2>
+        <form method="post" action="/post" enctype="multipart/form-data">
+            <textarea name="content" placeholder="What's on your mind?"></textarea>
+            <div class="image-upload">
+                <label class="image-label" for="image">📸 Add Photo</label>
+                <input type="file" id="image" name="image" accept="image/*"
+                       onchange="previewImage(this)"/>
+                <div class="preview" id="preview">
+                    <img id="preview-img" src="" alt="preview"/>
+                </div>
+            </div>
+            <button class="btn-post" type="submit">Post</button>
+        </form>
+    </div>
+</div>
+<script>
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview-img').src = e.target.result;
+            document.getElementById('preview').style.display = 'block';
+        }
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+</script>
+</body>
+</html>

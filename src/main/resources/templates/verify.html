@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Nexora - Verify Email</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef0f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .box { background: white; padding: 40px; border-radius: 16px; width: 380px; box-shadow: 0 4px 20px rgba(108,99,255,0.15); }
+        h1 { text-align: center; color: #6c63ff; margin-bottom: 8px; font-size: 28px; }
+        .subtitle { text-align: center; color: #888; font-size: 14px; margin-bottom: 24px; }
+        .email-hint { text-align: center; background: #eef0f5; padding: 10px; border-radius: 8px; color: #6c63ff; font-size: 14px; margin-bottom: 20px; }
+        input { width: 100%; padding: 14px; margin: 8px 0; border: 1.5px solid #e0e0e0; border-radius: 10px; box-sizing: border-box; font-size: 18px; text-align: center; letter-spacing: 8px; }
+        input:focus { outline: none; border-color: #6c63ff; }
+        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #6c63ff, #48c6ef); color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; margin-top: 8px; }
+        button:hover { opacity: 0.9; }
+        .error { color: red; text-align: center; font-size: 13px; margin-bottom: 12px; }
+        .link { text-align: center; margin-top: 16px; font-size: 14px; color: #888; }
+        a { color: #6c63ff; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="box">
+    <h1>🌌 Nexora</h1>
+    <div class="subtitle">Enter the OTP sent to your email</div>
+    <div class="email-hint" th:text="${email}"></div>
+    <p th:if="${error}" class="error" th:text="${error}"></p>
+    <form method="post" action="/verify">
+        <input type="hidden" name="email" th:value="${email}" />
+        <input type="text" name="otp" placeholder="000000" maxlength="6" required autofocus />
+        <button type="submit">Verify Email</button>
+    </form>
+    <div class="link">Wrong email? <a href="/register">Go back</a></div>
+</div>
+</body>
+</html>

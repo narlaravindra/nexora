@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Nexora - Post</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef0f5; }
+        .navbar { background: linear-gradient(135deg, #6c63ff, #48c6ef); padding: 14px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .navbar h1 { color: white; font-size: 24px; letter-spacing: 1px; }
+        .navbar-right { display: flex; gap: 16px; }
+        .navbar a { color: white; text-decoration: none; font-size: 14px; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.5); }
+        .navbar a:hover { background: rgba(255,255,255,0.2); }
+        .container { max-width: 620px; margin: 32px auto; padding: 0 16px; }
+        .post-card { background: white; border-radius: 16px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+        .post-user { font-weight: 600; color: #6c63ff; font-size: 15px; margin-bottom: 10px; }
+        .post-content { font-size: 16px; color: #333; line-height: 1.6; margin-bottom: 12px; }
+        .post-footer { display: flex; justify-content: space-between; }
+        .post-time { font-size: 12px; color: #bbb; }
+        .like-count { font-size: 13px; color: #6c63ff; }
+        .comments-section { margin-top: 8px; }
+        .comments-title { font-size: 15px; font-weight: 600; color: #555; margin-bottom: 12px; }
+        .comment-card { background: white; border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: flex-start; }
+        .comment-left { flex: 1; }
+        .comment-user { font-weight: 600; color: #6c63ff; font-size: 13px; margin-bottom: 4px; }
+        .comment-content { font-size: 14px; color: #333; line-height: 1.5; }
+        .comment-time { font-size: 11px; color: #bbb; margin-top: 4px; }
+        .btn-del-comment { background: none; border: none; color: #ffaaaa; cursor: pointer; font-size: 18px; padding: 0 4px; }
+        .btn-del-comment:hover { color: #ff4d4d; }
+        .comment-form { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); margin-top: 8px; }
+        .comment-form textarea { width: 100%; padding: 12px; border: 1.5px solid #e0e0e0; border-radius: 10px; font-size: 14px; resize: none; height: 80px; font-family: inherit; }
+        .comment-form textarea:focus { outline: none; border-color: #6c63ff; }
+        .btn-submit { margin-top: 10px; padding: 10px 24px; background: linear-gradient(135deg, #6c63ff, #48c6ef); color: white; border: none; border-radius: 20px; font-size: 14px; cursor: pointer; }
+        .btn-submit:hover { opacity: 0.9; }
+        .back-link { display: inline-block; margin-bottom: 16px; color: #6c63ff; text-decoration: none; font-size: 14px; }
+        .back-link:hover { text-decoration: underline; }
+        .empty-comments { text-align: center; color: #bbb; padding: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+<div class="navbar">
+    <h1>🌌 Nexora</h1>
+    <div class="navbar-right">
+        <a href="/feed">Feed</a>
+        <a href="/post">+ New Post</a>
+        <a href="/logout">Logout</a>
+    </div>
+</div>
+<div class="container">
+    <a class="back-link" href="/feed">← Back to Feed</a>
+
+    <div class="post-card">
+        <div class="post-user" th:text="'@' + ${post.username}"></div>
+        <div class="post-content" th:text="${post.content}"></div>
+        <div class="post-footer">
+            <div class="post-time" th:text="${post.created_at}"></div>
+            <div class="like-count" th:text="'♥ ' + ${post.like_count}"></div>
+        </div>
+    </div>
+
+    <div class="comments-section">
+        <div class="comments-title" th:text="${comments.size()} + ' Comments'"></div>
+        <div th:if="${comments.isEmpty()}" class="empty-comments">
+            No comments yet. Be the first to comment!
+        </div>
+        <div th:each="comment : ${comments}" class="comment-card">
+            <div class="comment-left">
+                <div class="comment-user" th:text="'@' + ${comment.username}"></div>
+                <div class="comment-content" th:text="${comment.content}"></div>
+                <div class="comment-time" th:text="${comment.created_at}"></div>
+            </div>
+            <form th:if="${comment.username == username}"
+                  method="post"
+                  th:action="'/comment/delete/' + ${comment.id} + '/' + ${post.id}">
+                <button class="btn-del-comment" type="submit">×</button>
+            </form>
+        </div>
+
+        <div class="comment-form">
+            <form method="post" th:action="'/comment/' + ${post.id}">
+                <textarea name="content" placeholder="Write a comment..." required></textarea>
+                <button class="btn-submit" type="submit">Post Comment</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
