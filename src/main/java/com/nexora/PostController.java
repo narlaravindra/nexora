@@ -28,16 +28,27 @@ public class PostController {
 
         List<Map<String, Object>> posts = db.queryForList(
             "SELECT posts.id, users.username, users.photo as user_photo, " +
-            "posts.content, posts.image, posts.created_at, " +
+            "posts.content, posts.image, posts.created_at, posts.views, " +
             "COUNT(likes.id) as like_count, " +
-            "MAX(CASE WHEN likes.user_id = ? THEN 1 ELSE 0 END) as liked " +
+            "MAX(CASE WHEN likes.user_id = ? THEN 1 ELSE 0 END) as liked, " +
+            "(SELECT COUNT(*) FROM comments WHERE post_id = posts.id) as comment_count " +
             "FROM posts JOIN users ON posts.user_id = users.id " +
             "LEFT JOIN likes ON likes.post_id = posts.id " +
-            "GROUP BY posts.id, users.username, users.photo, posts.content, posts.image, posts.created_at " +
+            "GROUP BY posts.id, users.username, users.photo, posts.content, posts.image, posts.created_at, posts.views " +
             "ORDER BY posts.created_at DESC", userId);
+
+        int unreadNotifications = db.queryForObject(
+            "SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = false",
+            Integer.class, userId);
+
+        int unreadMessages = db.queryForObject(
+            "SELECT COUNT(*) FROM messages WHERE receiver_id = ? AND is_read = false",
+            Integer.class, userId);
 
         model.addAttribute("posts", posts);
         model.addAttribute("username", username);
+        model.addAttribute("unreadNotifications", unreadNotifications);
+        model.addAttribute("unreadMessages", unreadMessages);
         return "feed";
     }
 
@@ -57,14 +68,12 @@ public class PostController {
         String imagePath = null;
         if (image != null && !image.isEmpty()) {
             Map uploadResult = cloudinary.uploader().upload(
-                image.getBytes(),
-                ObjectUtils.asMap("folder", "nexora/posts")
-            );
+                image.getBytes(), ObjectUtils.asMap("folder", "nexora/posts"));
             imagePath = (String) uploadResult.get("secure_url");
         }
 
         db.update("INSERT INTO posts (user_id, content, image) VALUES (?, ?, ?)",
-                  userId, content, imagePath);
+            userId, content, imagePath);
         return "redirect:/feed";
     }
 
@@ -73,6 +82,9 @@ public class PostController {
                              jakarta.servlet.http.HttpSession session) {
         if (session.getAttribute("username") == null) return "redirect:/login";
         int userId = (int) session.getAttribute("user_id");
+        db.update("DELETE FROM likes WHERE post_id = ?", id);
+        db.update("DELETE FROM comments WHERE post_id = ?", id);
+        db.update("DELETE FROM notifications WHERE post_id = ?", id);
         db.update("DELETE FROM posts WHERE id = ? AND user_id = ?", id, userId);
         return "redirect:/feed";
     }
@@ -84,6 +96,15 @@ public class PostController {
         int userId = (int) session.getAttribute("user_id");
         try {
             db.update("INSERT INTO likes (user_id, post_id) VALUES (?, ?)", userId, id);
+            List<Map<String, Object>> post = db.queryForList(
+                "SELECT user_id FROM posts WHERE id = ?", id);
+            if (!post.isEmpty()) {
+                int postOwnerId = ((Number) post.get(0).get("user_id")).intValue();
+                if (postOwnerId != userId) {
+                    db.update("INSERT INTO notifications (user_id, from_user_id, type, post_id) VALUES (?, ?, 'like', ?)",
+                        postOwnerId, userId, id);
+                }
+            }
         } catch (Exception e) {
             db.update("DELETE FROM likes WHERE user_id = ? AND post_id = ?", userId, id);
         }

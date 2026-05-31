@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Nexora - Notifications</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f0c29; min-height: 100vh; }
+        .navbar { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .logo { color: white; font-size: 22px; font-weight: 800; letter-spacing: 2px; text-decoration: none; }
+        .logo span { color: #a78bfa; }
+        .nav-links { display: flex; gap: 8px; }
+        .nav-links a { color: #94a3b8; text-decoration: none; font-size: 13px; padding: 8px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); transition: 0.2s; }
+        .nav-links a:hover { background: rgba(255,255,255,0.1); color: white; }
+        .container { max-width: 600px; margin: 24px auto; padding: 0 16px; }
+        .page-title { color: white; font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+        .notif-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin-bottom: 10px; display: flex; align-items: center; gap: 12px; }
+        .notif-card.unread { background: rgba(167,139,250,0.1); border-color: rgba(167,139,250,0.2); }
+        .avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #a78bfa, #60a5fa); color: white; font-size: 18px; font-weight: bold; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .notif-text { flex: 1; }
+        .notif-text strong { color: white; font-size: 14px; }
+        .notif-text span { color: #94a3b8; font-size: 14px; }
+        .notif-time { color: #475569; font-size: 11px; margin-top: 4px; }
+        .notif-icon { font-size: 20px; }
+        .empty { text-align: center; color: #475569; padding: 60px 20px; font-size: 15px; }
+    </style>
+</head>
+<body>
+<div class="navbar">
+    <a href="/feed" class="logo">NEX<span>ORA</span></a>
+    <div class="nav-links">
+        <a href="/feed">Feed</a>
+        <a href="/messages">💬 Messages</a>
+        <a th:href="'/profile/' + ${username}">Profile</a>
+    </div>
+</div>
+<div class="container">
+    <div class="page-title">🔔 Notifications</div>
+    <div th:if="${notifications.isEmpty()}" class="empty">
+        No notifications yet!
+    </div>
+    <div th:each="n : ${notifications}" class="notif-card">
+        <div class="avatar">
+            <img th:if="${n.from_photo != null}" th:src="${n.from_photo}" alt="avatar"/>
+            <span th:if="${n.from_photo == null}" th:text="${n.from_username.substring(0,1).toUpperCase()}"></span>
+        </div>
+        <div class="notif-text">
+            <strong th:text="'@' + ${n.from_username}"></strong>
+            <span th:if="${n.type == 'like'}"> liked your post ♥</span>
+            <span th:if="${n.type == 'follow'}"> started following you</span>
+            <span th:if="${n.type == 'comment'}"> commented on your post</span>
+            <div class="notif-time" th:text="${n.created_at}"></div>
+        </div>
+        <div class="notif-icon">
+            <span th:if="${n.type == 'like'}">♥</span>
+            <span th:if="${n.type == 'follow'}">👤</span>
+            <span th:if="${n.type == 'comment'}">💬</span>
+        </div>
+    </div>
+</div>
+</body>
+</html>

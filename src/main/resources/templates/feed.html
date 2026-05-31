@@ -2,78 +2,88 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Nexora - Feed</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef0f5; }
-        .navbar { background: linear-gradient(135deg, #6c63ff, #48c6ef); padding: 14px 32px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-        .navbar h1 { color: white; font-size: 24px; letter-spacing: 1px; }
-        .navbar-right { display: flex; align-items: center; gap: 16px; }
-        .navbar a { color: white; text-decoration: none; font-size: 14px; padding: 6px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.5); transition: 0.2s; }
-        .navbar a:hover { background: rgba(255,255,255,0.2); }
-        .navbar span { color: white; font-size: 14px; }
-        .container { max-width: 620px; margin: 32px auto; padding: 0 16px; }
-        .new-post-banner { background: white; border-radius: 16px; padding: 16px 22px; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); display: flex; align-items: center; gap: 12px; }
-        .new-post-banner a { flex: 1; background: #eef0f5; border-radius: 20px; padding: 10px 18px; color: #aaa; text-decoration: none; font-size: 14px; }
-        .new-post-banner a:hover { background: #e0e2f0; }
-        .post-card { background: white; border-radius: 16px; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); overflow: hidden; transition: 0.2s; }
-        .post-card:hover { box-shadow: 0 4px 16px rgba(108,99,255,0.12); transform: translateY(-1px); }
-        .post-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px 12px; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f0c29; min-height: 100vh; }
+        .navbar { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(255,255,255,0.1); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+        .logo { color: white; font-size: 22px; font-weight: 800; letter-spacing: 2px; text-decoration: none; }
+        .logo span { color: #a78bfa; }
+        .nav-links { display: flex; gap: 8px; align-items: center; }
+        .nav-links a { color: #94a3b8; text-decoration: none; font-size: 13px; padding: 8px 14px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); transition: 0.2s; position: relative; }
+        .nav-links a:hover { background: rgba(255,255,255,0.1); color: white; }
+        .badge { position: absolute; top: -4px; right: -4px; background: #f87171; color: white; font-size: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+        .container { max-width: 600px; margin: 24px auto; padding: 0 16px; }
+        .new-post-box { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
+        .new-post-box a { flex: 1; background: rgba(255,255,255,0.05); border-radius: 25px; padding: 10px 18px; color: #475569; text-decoration: none; font-size: 14px; border: 1px solid rgba(255,255,255,0.08); }
+        .new-post-box a:hover { background: rgba(255,255,255,0.08); color: #94a3b8; }
+        .post-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; margin-bottom: 16px; overflow: hidden; transition: 0.2s; }
+        .post-card:hover { border-color: rgba(167,139,250,0.2); }
+        .post-header { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px 10px; }
         .user-info { display: flex; align-items: center; gap: 10px; }
-        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #6c63ff, #48c6ef); color: white; font-size: 16px; font-weight: bold; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
-        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .post-user { font-weight: 600; color: #6c63ff; font-size: 15px; text-decoration: none; }
-        .post-user:hover { text-decoration: underline; }
-        .post-content { font-size: 15px; color: #333; line-height: 1.6; padding: 0 20px 12px; }
-        .post-image { width: 100%; max-height: 400px; object-fit: cover; }
-        .post-footer { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px 16px; border-top: 1px solid #f0f0f0; }
-        .post-time { font-size: 12px; color: #bbb; }
+        .avatar { width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #a78bfa, #60a5fa); color: white; font-size: 15px; font-weight: bold; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .post-user { font-weight: 600; color: #a78bfa; font-size: 14px; text-decoration: none; }
+        .post-content { font-size: 15px; color: #e2e8f0; line-height: 1.6; padding: 0 16px 12px; }
+        .post-image { width: 100%; max-height: 500px; object-fit: cover; }
+        .post-footer { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px 14px; border-top: 1px solid rgba(255,255,255,0.05); }
+        .post-time { font-size: 11px; color: #475569; }
         .post-actions { display: flex; gap: 8px; align-items: center; }
-        .btn-like { background: none; border: 1.5px solid #6c63ff; color: #6c63ff; padding: 5px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; transition: 0.2s; }
-        .btn-like.liked { background: #6c63ff; color: white; }
-        .btn-like:hover { background: #6c63ff; color: white; }
-        .btn-comment { text-decoration: none; background: none; border: 1.5px solid #48c6ef; color: #48c6ef; padding: 5px 14px; border-radius: 20px; font-size: 13px; transition: 0.2s; }
-        .btn-comment:hover { background: #48c6ef; color: white; }
-        .btn-delete { background: none; border: 1.5px solid #ff4d4d; color: #ff4d4d; padding: 5px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; transition: 0.2s; }
-        .btn-delete:hover { background: #ff4d4d; color: white; }
-        .empty { text-align: center; color: #bbb; margin-top: 60px; font-size: 16px; }
+        .btn-like { background: none; border: 1px solid rgba(167,139,250,0.3); color: #a78bfa; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 13px; transition: 0.2s; }
+        .btn-like.liked { background: #a78bfa; color: white; border-color: #a78bfa; }
+        .btn-like:hover { background: #a78bfa; color: white; }
+        .btn-comment { text-decoration: none; background: none; border: 1px solid rgba(96,165,250,0.3); color: #60a5fa; padding: 5px 12px; border-radius: 20px; font-size: 13px; transition: 0.2s; }
+        .btn-comment:hover { background: #60a5fa; color: white; }
+        .btn-delete { background: none; border: 1px solid rgba(248,113,113,0.3); color: #f87171; padding: 5px 12px; border-radius: 20px; cursor: pointer; font-size: 13px; }
+        .btn-delete:hover { background: #f87171; color: white; }
+        .views { font-size: 11px; color: #475569; }
+        .empty { text-align: center; color: #475569; padding: 60px 20px; font-size: 15px; }
     </style>
 </head>
 <body>
 <div class="navbar">
-    <h1>🌌 Nexora</h1>
-    <div class="navbar-right">
-        <span th:text="'Hello, ' + ${username}"></span>
-        <a href="/search">🔍 Search</a>
-        <a th:href="'/profile/' + ${username}">My Profile</a>
-        <a href="/logout">Logout</a>
+    <a href="/feed" class="logo">NEX<span>ORA</span></a>
+    <div class="nav-links">
+        <a href="/notifications" style="position:relative;">
+            🔔
+            <span th:if="${unreadNotifications > 0}" class="badge" th:text="${unreadNotifications}"></span>
+        </a>
+        <a href="/messages" style="position:relative;">
+            💬
+            <span th:if="${unreadMessages > 0}" class="badge" th:text="${unreadMessages}"></span>
+        </a>
+        <a href="/search">🔍</a>
+        <a th:href="'/profile/' + ${username}">👤</a>
+        <a href="/logout">Exit</a>
     </div>
 </div>
 <div class="container">
-    <div class="new-post-banner">
-        <a href="/post">What's on your mind? Click to post...</a>
+    <div class="new-post-box">
+        <a href="/post">What's on your mind?</a>
     </div>
-    <div th:if="${posts.isEmpty()}" class="empty">
-        <p>No posts yet. Be the first to post! 🚀</p>
-    </div>
+    <div th:if="${posts.isEmpty()}" class="empty">No posts yet. Be the first! 🚀</div>
     <div th:each="post : ${posts}" class="post-card">
         <div class="post-header">
             <div class="user-info">
-                <div class="user-avatar">
+                <div class="avatar">
                     <img th:if="${post.user_photo != null}" th:src="${post.user_photo}" alt="avatar"/>
                     <span th:if="${post.user_photo == null}" th:text="${post.username.substring(0,1).toUpperCase()}"></span>
                 </div>
                 <a class="post-user" th:href="'/profile/' + ${post.username}" th:text="'@' + ${post.username}"></a>
             </div>
             <form th:if="${post.username == username}" method="post" th:action="'/delete/' + ${post.id}">
-                <button class="btn-delete" type="submit">Delete</button>
+                <button class="btn-delete" type="submit">✕</button>
             </form>
         </div>
         <div th:if="${post.content != null and !post.content.isEmpty()}" class="post-content" th:text="${post.content}"></div>
-        <img th:if="${post.image != null}" th:src="${post.image}" class="post-image" alt="post image"/>
+        <img th:if="${post.image != null}" th:src="${post.image}" class="post-image" alt="post"/>
         <div class="post-footer">
             <div class="post-time" th:text="${post.created_at}"></div>
             <div class="post-actions">
-                <a class="btn-comment" th:href="'/post/' + ${post.id}">💬</a>
+                <span class="views" th:text="${post.views} + ' views'"></span>
+                <a class="btn-comment" th:href="'/post/' + ${post.id}">
+                    💬 <span th:text="${post.comment_count}">0</span>
+                </a>
                 <form method="post" th:action="'/like/' + ${post.id}">
                     <button type="submit" th:class="${post.liked == 1} ? 'btn-like liked' : 'btn-like'">
                         ♥ <span th:text="${post.like_count}">0</span>
