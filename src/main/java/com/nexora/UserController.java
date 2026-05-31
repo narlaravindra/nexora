@@ -7,6 +7,10 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +25,8 @@ public class UserController {
     @Autowired
     JavaMailSender mailSender;
 
+    private static final String FAST2SMS_KEY = "735JPtiM6vgqz8kbIKDV9ZA0C1ryFNXOQHWwmncBl4hsfSExajLWmoOZht9C1eTyNU0zAcPfH5BxpFa8";
+
     private String generateOTP() {
         return String.format("%06d", new Random().nextInt(999999));
     }
@@ -34,6 +40,23 @@ public class UserController {
             mailSender.send(message);
         } catch (Exception e) {
             System.out.println("Email failed: " + e.getMessage());
+        }
+    }
+
+    private void sendSMS(String mobile, String otp) {
+        try {
+            String url = "https://www.fast2sms.com/dev/bulkV2?authorization=" + FAST2SMS_KEY +
+                "&route=otp&variables_values=" + otp +
+                "&flash=0&numbers=" + mobile;
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .GET()
+                .build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            System.out.println("SMS Response: " + response.body());
+        } catch (Exception e) {
+            System.out.println("SMS failed: " + e.getMessage());
         }
     }
 
@@ -63,15 +86,45 @@ public class UserController {
                 return "register";
             }
             String hashedPassword = org.mindrot.jbcrypt.BCrypt.hashpw(password, org.mindrot.jbcrypt.BCrypt.gensalt());
-            db.update("INSERT INTO users (username, email, password_hash, is_verified) VALUES (?, ?, ?, true)",
-                username, email, hashedPassword);
-            sendEmail(email, "Welcome to Nexora! 🌌",
-                "Hi " + username + "!\n\nWelcome to Nexora!\n\n🌌 Nexora Team");
-            return "redirect:/login?verified=true";
+            String otp = generateOTP();
+            LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
+            db.update("INSERT INTO users (username, email, password_hash, is_verified, otp, otp_expiry) VALUES (?, ?, ?, false, ?, ?)",
+                username, email, hashedPassword, otp, expiry);
+            sendEmail(email, "Nexora - Verify Your Email 🌌",
+                "Hi " + username + "!\n\nYour OTP is: " + otp + "\n\nExpires in 10 minutes.\n\n🌌 Nexora Team");
+            return "redirect:/verify?email=" + email;
         } catch (Exception e) {
             model.addAttribute("error", "Registration failed: " + e.getMessage());
             return "register";
         }
+    }
+
+    @GetMapping("/verify")
+    public String verifyPage(@RequestParam String email, Model model) {
+        model.addAttribute("email", email);
+        return "verify";
+    }
+
+    @PostMapping("/verify")
+    public String verifyOTP(@RequestParam String email,
+                            @RequestParam String otp,
+                            Model model) {
+        List<Map<String, Object>> users = db.queryForList(
+            "SELECT * FROM users WHERE email = ? AND otp = ?", email, otp);
+        if (users.isEmpty()) {
+            model.addAttribute("email", email);
+            model.addAttribute("error", "Invalid OTP!");
+            return "verify";
+        }
+        Map<String, Object> user = users.get(0);
+        LocalDateTime expiry = ((java.sql.Timestamp) user.get("otp_expiry")).toLocalDateTime();
+        if (LocalDateTime.now().isAfter(expiry)) {
+            model.addAttribute("email", email);
+            model.addAttribute("error", "OTP expired! Please register again.");
+            return "verify";
+        }
+        db.update("UPDATE users SET is_verified = true, otp = null WHERE email = ?", email);
+        return "redirect:/login?verified=true";
     }
 
     @PostMapping("/register-mobile")
@@ -88,6 +141,10 @@ public class UserController {
                 model.addAttribute("error", "Password must be at least 8 characters!");
                 return "register";
             }
+            if (mobile.length() != 10) {
+                model.addAttribute("error", "Enter valid 10 digit mobile number!");
+                return "register";
+            }
             List<Map<String, Object>> existing = db.queryForList(
                 "SELECT * FROM users WHERE username = ? OR mobile = ?", username, mobile);
             if (!existing.isEmpty()) {
@@ -100,7 +157,8 @@ public class UserController {
             String dummyEmail = username + "_" + mobile + "@nexora.mobile";
             db.update("INSERT INTO users (username, email, mobile, password_hash, is_verified, otp, otp_expiry) VALUES (?, ?, ?, ?, false, ?, ?)",
                 username, dummyEmail, mobile, hashedPassword, otp, expiry);
-            return "redirect:/verify-mobile?mobile=" + mobile + "&otp=" + otp;
+            sendSMS(mobile, otp);
+            return "redirect:/verify-mobile?mobile=" + mobile;
         } catch (Exception e) {
             model.addAttribute("error", "Registration failed: " + e.getMessage());
             return "register";
@@ -108,11 +166,8 @@ public class UserController {
     }
 
     @GetMapping("/verify-mobile")
-    public String verifyMobilePage(@RequestParam String mobile,
-                                   @RequestParam String otp,
-                                   Model model) {
+    public String verifyMobilePage(@RequestParam String mobile, Model model) {
         model.addAttribute("mobile", mobile);
-        model.addAttribute("otp", otp);
         return "verify-mobile";
     }
 
@@ -125,6 +180,13 @@ public class UserController {
         if (users.isEmpty()) {
             model.addAttribute("mobile", mobile);
             model.addAttribute("error", "Invalid OTP!");
+            return "verify-mobile";
+        }
+        Map<String, Object> user = users.get(0);
+        LocalDateTime expiry = ((java.sql.Timestamp) user.get("otp_expiry")).toLocalDateTime();
+        if (LocalDateTime.now().isAfter(expiry)) {
+            model.addAttribute("mobile", mobile);
+            model.addAttribute("error", "OTP expired!");
             return "verify-mobile";
         }
         db.update("UPDATE users SET is_verified = true, otp = null WHERE mobile = ?", mobile);
@@ -144,20 +206,16 @@ public class UserController {
         List<Map<String, Object>> users = db.queryForList(
             "SELECT * FROM users WHERE (email = ? OR username = ? OR mobile = ?) AND is_verified = true",
             identifier, identifier, identifier);
-
         if (users.isEmpty()) {
             model.addAttribute("error", "User not found or not verified!");
             return "login";
         }
-
         Map<String, Object> user = users.get(0);
         String hashedPassword = (String) user.get("password_hash");
-
         if (!org.mindrot.jbcrypt.BCrypt.checkpw(password, hashedPassword)) {
             model.addAttribute("error", "Invalid password!");
             return "login";
         }
-
         session.setAttribute("username", user.get("username"));
         session.setAttribute("user_id", ((Number) user.get("id")).intValue());
         return "redirect:/feed";
