@@ -60,14 +60,18 @@ public class UserController {
         }
     }
 
+    private boolean isMobile(String identifier) {
+        return identifier.matches("\\d{10}");
+    }
+
     @GetMapping("/register")
     public String registerPage() {
         return "register";
     }
 
-    @PostMapping("/register")
-    public String registerUser(@RequestParam String username,
-                               @RequestParam String email,
+    @PostMapping("/register-auto")
+    public String registerAuto(@RequestParam String username,
+                               @RequestParam String identifier,
                                @RequestParam String password,
                                Model model) {
         try {
@@ -79,20 +83,35 @@ public class UserController {
                 model.addAttribute("error", "Password must be at least 8 characters!");
                 return "register";
             }
-            List<Map<String, Object>> existing = db.queryForList(
-                "SELECT * FROM users WHERE username = ? OR email = ?", username, email);
-            if (!existing.isEmpty()) {
-                model.addAttribute("error", "Username or email already exists!");
-                return "register";
-            }
-            String hashedPassword = org.mindrot.jbcrypt.BCrypt.hashpw(password, org.mindrot.jbcrypt.BCrypt.gensalt());
             String otp = generateOTP();
             LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
-            db.update("INSERT INTO users (username, email, password_hash, is_verified, otp, otp_expiry) VALUES (?, ?, ?, false, ?, ?)",
-                username, email, hashedPassword, otp, expiry);
-            sendEmail(email, "Nexora - Verify Your Email 🌌",
-                "Hi " + username + "!\n\nYour OTP is: " + otp + "\n\nExpires in 10 minutes.\n\n🌌 Nexora Team");
-            return "redirect:/verify?email=" + email;
+            String hashedPassword = org.mindrot.jbcrypt.BCrypt.hashpw(password, org.mindrot.jbcrypt.BCrypt.gensalt());
+
+            if (isMobile(identifier)) {
+                List<Map<String, Object>> existing = db.queryForList(
+                    "SELECT * FROM users WHERE username = ? OR mobile = ?", username, identifier);
+                if (!existing.isEmpty()) {
+                    model.addAttribute("error", "Username or mobile already exists!");
+                    return "register";
+                }
+                String dummyEmail = username + "_" + identifier + "@nexora.mobile";
+                db.update("INSERT INTO users (username, email, mobile, password_hash, is_verified, otp, otp_expiry) VALUES (?, ?, ?, ?, false, ?, ?)",
+                    username, dummyEmail, identifier, hashedPassword, otp, expiry);
+                sendSMS(identifier, otp);
+                return "redirect:/verify-mobile?mobile=" + identifier;
+            } else {
+                List<Map<String, Object>> existing = db.queryForList(
+                    "SELECT * FROM users WHERE username = ? OR email = ?", username, identifier);
+                if (!existing.isEmpty()) {
+                    model.addAttribute("error", "Username or email already exists!");
+                    return "register";
+                }
+                db.update("INSERT INTO users (username, email, password_hash, is_verified, otp, otp_expiry) VALUES (?, ?, ?, false, ?, ?)",
+                    username, identifier, hashedPassword, otp, expiry);
+                sendEmail(identifier, "Nexora - Verify Your Email 🌌",
+                    "Hi " + username + "!\n\nYour OTP is: " + otp + "\n\nExpires in 10 minutes.\n\n🌌 Nexora Team");
+                return "redirect:/verify?email=" + identifier;
+            }
         } catch (Exception e) {
             model.addAttribute("error", "Registration failed: " + e.getMessage());
             return "register";
@@ -120,49 +139,11 @@ public class UserController {
         LocalDateTime expiry = ((java.sql.Timestamp) user.get("otp_expiry")).toLocalDateTime();
         if (LocalDateTime.now().isAfter(expiry)) {
             model.addAttribute("email", email);
-            model.addAttribute("error", "OTP expired! Please register again.");
+            model.addAttribute("error", "OTP expired!");
             return "verify";
         }
         db.update("UPDATE users SET is_verified = true, otp = null WHERE email = ?", email);
         return "redirect:/login?verified=true";
-    }
-
-    @PostMapping("/register-mobile")
-    public String registerMobile(@RequestParam String username,
-                                 @RequestParam String mobile,
-                                 @RequestParam String password,
-                                 Model model) {
-        try {
-            if (username.contains(" ")) {
-                model.addAttribute("error", "Username cannot contain spaces!");
-                return "register";
-            }
-            if (password.length() < 8) {
-                model.addAttribute("error", "Password must be at least 8 characters!");
-                return "register";
-            }
-            if (mobile.length() != 10) {
-                model.addAttribute("error", "Enter valid 10 digit mobile number!");
-                return "register";
-            }
-            List<Map<String, Object>> existing = db.queryForList(
-                "SELECT * FROM users WHERE username = ? OR mobile = ?", username, mobile);
-            if (!existing.isEmpty()) {
-                model.addAttribute("error", "Username or mobile already exists!");
-                return "register";
-            }
-            String hashedPassword = org.mindrot.jbcrypt.BCrypt.hashpw(password, org.mindrot.jbcrypt.BCrypt.gensalt());
-            String otp = generateOTP();
-            LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
-            String dummyEmail = username + "_" + mobile + "@nexora.mobile";
-            db.update("INSERT INTO users (username, email, mobile, password_hash, is_verified, otp, otp_expiry) VALUES (?, ?, ?, ?, false, ?, ?)",
-                username, dummyEmail, mobile, hashedPassword, otp, expiry);
-            sendSMS(mobile, otp);
-            return "redirect:/verify-mobile?mobile=" + mobile;
-        } catch (Exception e) {
-            model.addAttribute("error", "Registration failed: " + e.getMessage());
-            return "register";
-        }
     }
 
     @GetMapping("/verify-mobile")
@@ -238,7 +219,7 @@ public class UserController {
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
         db.update("UPDATE users SET otp = ?, otp_expiry = ? WHERE email = ?", otp, expiry, email);
         sendEmail(email, "Nexora - Password Reset OTP",
-            "Your password reset OTP is: " + otp + "\n\nExpires in 10 minutes.\n\n🌌 Nexora Team");
+            "Your OTP is: " + otp + "\n\nExpires in 10 minutes.\n\n🌌 Nexora Team");
         model.addAttribute("success", "OTP sent to " + email);
         model.addAttribute("email", email);
         return "reset-password";
