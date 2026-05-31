@@ -2,34 +2,54 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <title>Nexora - Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef0f5; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        .box { background: white; padding: 40px; border-radius: 16px; width: 380px; box-shadow: 0 4px 20px rgba(108,99,255,0.15); }
-        h1 { text-align: center; color: #6c63ff; margin-bottom: 8px; font-size: 28px; }
-        .subtitle { text-align: center; color: #888; font-size: 14px; margin-bottom: 24px; }
-        input { width: 100%; padding: 14px; margin: 8px 0; border: 1.5px solid #e0e0e0; border-radius: 10px; box-sizing: border-box; font-size: 14px; }
-        input:focus { outline: none; border-color: #6c63ff; }
-        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #6c63ff, #48c6ef); color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; margin-top: 8px; }
-        button:hover { opacity: 0.9; }
-        .error { color: red; text-align: center; font-size: 13px; margin-bottom: 12px; }
-        .success { color: green; text-align: center; font-size: 13px; margin-bottom: 12px; }
-        .link { text-align: center; margin-top: 16px; font-size: 14px; color: #888; }
-        a { color: #6c63ff; text-decoration: none; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f0c29; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .box { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); padding: 40px; border-radius: 20px; width: 100%; max-width: 420px; }
+        .logo { text-align: center; font-size: 28px; font-weight: 800; color: white; letter-spacing: 2px; margin-bottom: 8px; }
+        .logo span { color: #a78bfa; }
+        .subtitle { text-align: center; color: #64748b; font-size: 14px; margin-bottom: 28px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+        input { width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; font-size: 14px; color: white; transition: 0.3s; }
+        input::placeholder { color: #475569; }
+        input:focus { outline: none; border-color: #a78bfa; background: rgba(167,139,250,0.1); }
+        .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, #a78bfa, #60a5fa); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; transition: 0.3s; }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .error { color: #f87171; text-align: center; font-size: 13px; margin-bottom: 16px; background: rgba(248,113,113,0.1); padding: 10px; border-radius: 8px; }
+        .success { color: #4ade80; text-align: center; font-size: 13px; margin-bottom: 16px; background: rgba(74,222,128,0.1); padding: 10px; border-radius: 8px; }
+        .forgot { text-align: right; margin-top: 6px; }
+        .forgot a { color: #a78bfa; font-size: 12px; text-decoration: none; }
+        .link { text-align: center; margin-top: 20px; font-size: 14px; color: #64748b; }
+        .link a { color: #a78bfa; text-decoration: none; }
+        .hint { text-align: center; color: #475569; font-size: 12px; margin-top: 12px; }
     </style>
 </head>
 <body>
 <div class="box">
-    <h1>🌌 Nexora</h1>
+    <div class="logo">NEX<span>ORA</span></div>
     <div class="subtitle">Welcome back!</div>
-    <p th:if="${param.verified}" class="success">Email verified! You can now login.</p>
+
+    <p th:if="${param.verified}" class="success">✅ Account created! Please login.</p>
+    <p th:if="${param.reset}" class="success">✅ Password reset! Please login.</p>
     <p th:if="${error}" class="error" th:text="${error}"></p>
+
     <form method="post" action="/login">
-        <input type="email" name="email" placeholder="Email address" required />
-        <input type="password" name="password" placeholder="Password" required />
-        <button type="submit">Login</button>
+        <div class="form-group">
+            <label>Username or Email</label>
+            <input type="text" name="identifier" placeholder="Username or email address" required/>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" name="password" placeholder="Your password" required/>
+            <div class="forgot"><a href="/forgot-password">Forgot password?</a></div>
+        </div>
+        <button class="btn-primary" type="submit">Sign In →</button>
     </form>
-    <div class="link">No account? <a href="/register">Register</a></div>
+
+    <div class="hint">Login with username or email address</div>
+    <div class="link">Don't have an account? <a href="/register">Sign Up</a></div>
 </div>
 </body>
 </html>
