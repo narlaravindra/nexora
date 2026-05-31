@@ -66,7 +66,7 @@ public class UserController {
             db.update("INSERT INTO users (username, email, password_hash, is_verified) VALUES (?, ?, ?, true)",
                 username, email, hashedPassword);
             sendEmail(email, "Welcome to Nexora! 🌌",
-                "Hi " + username + "!\n\nWelcome to Nexora — your private social platform!\n\nStart posting and connecting with friends!\n\n🌌 Nexora Team");
+                "Hi " + username + "!\n\nWelcome to Nexora!\n\n🌌 Nexora Team");
             return "redirect:/login?verified=true";
         } catch (Exception e) {
             model.addAttribute("error", "Registration failed: " + e.getMessage());
@@ -97,8 +97,9 @@ public class UserController {
             String hashedPassword = org.mindrot.jbcrypt.BCrypt.hashpw(password, org.mindrot.jbcrypt.BCrypt.gensalt());
             String otp = generateOTP();
             LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
-            db.update("INSERT INTO users (username, mobile, password_hash, is_verified, otp, otp_expiry) VALUES (?, ?, ?, false, ?, ?)",
-                username, mobile, hashedPassword, otp, expiry);
+            String dummyEmail = username + "_" + mobile + "@nexora.mobile";
+            db.update("INSERT INTO users (username, email, mobile, password_hash, is_verified, otp, otp_expiry) VALUES (?, ?, ?, ?, false, ?, ?)",
+                username, dummyEmail, mobile, hashedPassword, otp, expiry);
             return "redirect:/verify-mobile?mobile=" + mobile + "&otp=" + otp;
         } catch (Exception e) {
             model.addAttribute("error", "Registration failed: " + e.getMessage());
@@ -179,7 +180,7 @@ public class UserController {
         LocalDateTime expiry = LocalDateTime.now().plusMinutes(10);
         db.update("UPDATE users SET otp = ?, otp_expiry = ? WHERE email = ?", otp, expiry, email);
         sendEmail(email, "Nexora - Password Reset OTP",
-            "Your password reset OTP is: " + otp + "\n\nThis OTP expires in 10 minutes.\n\n🌌 Nexora Team");
+            "Your password reset OTP is: " + otp + "\n\nExpires in 10 minutes.\n\n🌌 Nexora Team");
         model.addAttribute("success", "OTP sent to " + email);
         model.addAttribute("email", email);
         return "reset-password";
