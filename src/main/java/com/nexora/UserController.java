@@ -44,6 +44,7 @@ public class UserController {
     }
 
     private void sendSMS(String mobile, String otp) {
+        String TWOFACTOR_KEY = "30a95f47-5d1d-11f1-8352-0200cd936042";
         try {
             String url = "https://www.fast2sms.com/dev/bulkV2?authorization=" + FAST2SMS_KEY +
                 "&route=otp&variables_values=" + otp +
