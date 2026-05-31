@@ -6,20 +6,21 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #0f0c29; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .box { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 40px; border-radius: 20px; width: 100%; max-width: 420px; text-align: center; }
+        .box { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; }
         .logo { font-size: 28px; font-weight: 800; color: white; letter-spacing: 2px; margin-bottom: 8px; }
         .logo span { color: #a78bfa; }
-        .icon { font-size: 48px; margin: 20px 0; }
-        .subtitle { color: #64748b; font-size: 14px; margin-bottom: 8px; }
-        .email-hint { color: #a78bfa; font-size: 16px; font-weight: 600; margin-bottom: 24px; }
-        label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; text-align: left; text-transform: uppercase; }
-        input { width: 100%; padding: 14px 16px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; font-size: 24px; color: white; text-align: center; letter-spacing: 10px; margin-bottom: 16px; }
-        input:focus { outline: none; border-color: #a78bfa; }
-        .btn-primary { width: 100%; padding: 14px; background: linear-gradient(135deg, #a78bfa, #60a5fa); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+        .icon { font-size: 48px; margin: 16px 0 8px; }
+        .subtitle { color: #64748b; font-size: 14px; margin-bottom: 6px; }
+        .email-hint { color: #a78bfa; font-size: 15px; font-weight: 600; margin-bottom: 24px; }
+        .otp-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+        .otp-inputs { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+        .otp-inputs input { width: 46px; height: 54px; text-align: center; font-size: 22px; font-weight: 700; color: #a78bfa; background: rgba(167,139,250,0.1); border: 1.5px solid rgba(167,139,250,0.3); border-radius: 10px; padding: 0; }
+        .otp-inputs input:focus { outline: none; border-color: #a78bfa; background: rgba(167,139,250,0.2); }
+        .btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #a78bfa, #60a5fa); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
         .error { color: #f87171; font-size: 13px; margin-bottom: 16px; background: rgba(248,113,113,0.1); padding: 10px; border-radius: 8px; }
-        .link { margin-top: 20px; font-size: 14px; color: #64748b; }
-        .link a { color: #a78bfa; text-decoration: none; }
         .info { color: #475569; font-size: 12px; margin-top: 16px; line-height: 1.6; }
+        .link { margin-top: 16px; font-size: 14px; color: #64748b; }
+        .link a { color: #a78bfa; text-decoration: none; }
     </style>
 </head>
 <body>
@@ -28,22 +29,46 @@
     <div class="icon">📧</div>
     <div class="subtitle">OTP sent to your email</div>
     <div class="email-hint" th:text="${email}"></div>
-
     <p th:if="${error}" class="error" th:text="${error}"></p>
-
-    <form method="post" action="/verify">
+    <form method="post" action="/verify" id="otpForm">
         <input type="hidden" name="email" th:value="${email}"/>
-        <label>Enter 6-digit OTP</label>
-        <input type="text" name="otp" placeholder="••••••" maxlength="6" required autofocus/>
-        <button class="btn-primary" type="submit">Verify Email →</button>
+        <input type="hidden" name="otp" id="hidden-otp"/>
+        <div class="otp-label">Enter 6-digit OTP</div>
+        <div class="otp-inputs">
+            <input type="text" maxlength="1" class="otp-digit" id="d1"/>
+            <input type="text" maxlength="1" class="otp-digit" id="d2"/>
+            <input type="text" maxlength="1" class="otp-digit" id="d3"/>
+            <input type="text" maxlength="1" class="otp-digit" id="d4"/>
+            <input type="text" maxlength="1" class="otp-digit" id="d5"/>
+            <input type="text" maxlength="1" class="otp-digit" id="d6"/>
+        </div>
+        <button class="btn" type="submit">Verify Email →</button>
     </form>
-
-    <div class="info">
-        OTP sent to your email address.<br>
-        Check spam folder if not received.<br>
-        Valid for 10 minutes only.
-    </div>
+    <div class="info">Check your inbox and spam folder.<br>Valid for 10 minutes only.</div>
     <div class="link"><a href="/register">← Back to Register</a></div>
 </div>
+<script>
+const digits = document.querySelectorAll('.otp-digit');
+digits.forEach((digit, i) => {
+    digit.addEventListener('input', () => {
+        if (digit.value && i < 5) digits[i+1].focus();
+        updateHidden();
+    });
+    digit.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !digit.value && i > 0) digits[i-1].focus();
+    });
+});
+function updateHidden() {
+    document.getElementById('hidden-otp').value = Array.from(digits).map(d => d.value).join('');
+}
+document.getElementById('otpForm').addEventListener('submit', (e) => {
+    updateHidden();
+    if (document.getElementById('hidden-otp').value.length !== 6) {
+        e.preventDefault();
+        alert('Please enter complete 6-digit OTP');
+    }
+});
+digits[0].focus();
+</script>
 </body>
 </html>
