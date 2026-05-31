@@ -22,16 +22,26 @@ public class SearchController {
 
         if (q != null && !q.trim().isEmpty()) {
             List<Map<String, Object>> users = db.queryForList(
-                "SELECT username, " +
-                "(SELECT COUNT(*) FROM posts WHERE user_id = users.id) as post_count, " +
-                "(SELECT COUNT(*) FROM follows WHERE following_id = users.id) as followers " +
-                "FROM users WHERE username ILIKE ? AND is_verified = true",
-                "%" + q + "%");
+                "SELECT * FROM search_users(?)", q);
+            List<Map<String, Object>> trending = db.queryForList(
+                "SELECT * FROM get_trending_posts()");
             model.addAttribute("users", users);
+            model.addAttribute("trending", trending);
             model.addAttribute("query", q);
         }
 
         model.addAttribute("username", session.getAttribute("username"));
         return "search";
+    }
+
+    @GetMapping("/trending")
+    public String trending(Model model,
+                           jakarta.servlet.http.HttpSession session) {
+        if (session.getAttribute("username") == null) return "redirect:/login";
+        List<Map<String, Object>> trending = db.queryForList(
+            "SELECT * FROM get_trending_posts()");
+        model.addAttribute("trending", trending);
+        model.addAttribute("username", session.getAttribute("username"));
+        return "trending";
     }
 }
